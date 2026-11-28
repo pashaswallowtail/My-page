@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Pasha · Links</title>
+<style>
+  /* ========== 基础 ========== */
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --glass-bg: rgba(255, 255, 255, 0.12);
+    --glass-border: rgba(255, 255, 255, 0.28);
+    --glass-highlight: rgba(255, 255, 255, 0.35);
+    --text: #f4f6ff;
+    --text-dim: rgba(244, 246, 255, 0.66);
+  }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC",
+      "Noto Sans SC", "Segoe UI", Roboto, sans-serif;
+    color: var(--text);
+    background: #0d1020;
+    overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ========== 背景氛围光斑 ========== */
+  .scene {
+    position: fixed; inset: 0; z-index: 0;
+    background:
+      radial-gradient(1200px 800px at 80% -10%, #2b1e5e 0%, transparent 55%),
+      radial-gradient(1000px 700px at -10% 90%, #123a5e 0%, transparent 55%),
+      linear-gradient(160deg, #0d1020 0%, #13162e 50%, #0d1020 100%);
+  }
+  .blob {
+    position: absolute; border-radius: 50%;
+    filter: blur(70px); opacity: .55;
+    mix-blend-mode: screen;
+    animation: drift 18s ease-in-out infinite alternate;
+  }
+  .blob.b1 { width: 46vmax; height: 46vmax; top: -12vmax; left: -10vmax;
+    background: radial-gradient(circle at 30% 30%, #7c5cff, transparent 70%); }
+  .blob.b2 { width: 40vmax; height: 40vmax; bottom: -14vmax; right: -8vmax;
+    background: radial-gradient(circle at 60% 40%, #38c6ff, transparent 70%);
+    animation-delay: -6s; }
+  .blob.b3 { width: 30vmax; height: 30vmax; top: 35%; left: 55%;
+    background: radial-gradient(circle at 50% 50%, #ff7ac6, transparent 70%);
+    animation-delay: -12s; opacity: .35; }
+  @keyframes drift {
+    from { transform: translate(0, 0) scale(1); }
+    to   { transform: translate(6vmax, -4vmax) scale(1.12); }
+  }
+  /* 细颗粒噪点，增加质感 */
+  .scene::after {
+    content: ""; position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+    pointer-events: none;
+  }
+
+  /* ========== 背景漂浮图片 ========== */
+  .float-imgs { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+  .float-img {
+    position: absolute;
+    border-radius: 22%;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    opacity: .85;
+    animation: floaty 14s ease-in-out infinite alternate;
+  }
+  .float-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .float-img.f1 { width: 84px; height: 84px; top: 18%; left: 8%;  --r: -8deg; }
+  .float-img.f2 { width: 64px; height: 64px; top: 62%; left: 14%; --r: 6deg;  animation-delay: -4s; }
+  .float-img.f3 { width: 96px; height: 96px; top: 20%; right: 9%; --r: 7deg;  animation-delay: -8s; }
+  .float-img.f4 { width: 60px; height: 60px; bottom: 16%; right: 14%; --r: -6deg; animation-delay: -11s; }
+  @keyframes floaty {
+    from { transform: translateY(0) rotate(var(--r, 0deg)); }
+    to   { transform: translateY(-26px) rotate(var(--r, 0deg)); }
+  }
+  @media (max-width: 480px) {
+    .float-img.f2, .float-img.f4 { display: none; }
+  }
+
+  /* ========== 布局 ========== */
+  .wrap {
+    position: relative; z-index: 1;
+    height: 100dvh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 108px 20px 24px;
+    overflow-y: auto;
+  }
+
+  /* ========== 视图路由 ========== */
+  .view { display: none; width: 100%; max-width: 400px; }
+  .view.active { display: block; }
+  .glass-card.scroll { max-height: calc(100dvh - 40px); overflow-y: auto; }
+
+  /* 返回按钮 */
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    margin-bottom: 18px; padding: 9px 15px; border-radius: 14px;
+    color: var(--text); text-decoration: none; cursor: pointer;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    font-size: 14px; font-weight: 600;
+    transition: transform .2s ease, background .2s ease;
+  }
+  .back-btn:hover { background: rgba(255, 255, 255, 0.15); transform: translateY(-2px); }
+  .back-btn:active { transform: scale(.97); }
+  .back-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; }
+
+  .sub-head { margin-bottom: 20px; }
+  .sub-head h1 { font-size: 22px; font-weight: 700; }
+  .sub-head p { margin-top: 6px; font-size: 14px; color: var(--text-dim); }
+
+  /* About 段落 */
+  .about-text { display: flex; flex-direction: column; gap: 14px; position: relative; z-index: 1; }
+  .about-text p { font-size: 14.5px; line-height: 1.8; color: var(--text); }
+  .about-text p .dim { color: var(--text-dim); }
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+  .tag {
+    padding: 6px 12px; border-radius: 999px; font-size: 12.5px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    color: var(--text-dim);
+  }
+
+  /* 3D 模型网格 */
+  .models-note {
+    font-size: 14px; line-height: 1.7; color: var(--text-dim);
+    margin-bottom: 18px; position: relative; z-index: 1;
+  }
+  .model-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+    position: relative; z-index: 1;
+  }
+  .model-item {
+    border-radius: 18px; overflow: hidden; aspect-ratio: 1;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+  }
+  .model-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  /* ========== 高级动效 ========== */
+  /* 视图弹入：模糊 + 上浮 + 缩放 */
+  .view.active { animation: viewIn .55s cubic-bezier(.22, 1, .36, 1) both; }
+  @keyframes viewIn {
+    from { opacity: 0; transform: translateY(26px) scale(.965); filter: blur(10px); }
+    to   { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+  }
+  /* 子元素依次上浮 */
+  .anim { animation: riseIn .55s cubic-bezier(.22, 1, .36, 1) both; }
+  .view.active .anim:nth-of-type(1) { animation-delay: .08s; }
+  .view.active .anim:nth-of-type(2) { animation-delay: .16s; }
+  .view.active .anim:nth-of-type(3) { animation-delay: .24s; }
+  .view.active .anim:nth-of-type(4) { animation-delay: .32s; }
+  .view.active .anim:nth-of-type(5) { animation-delay: .40s; }
+  @keyframes riseIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* 渐变标题字 */
+  .grad-text {
+    background: linear-gradient(120deg, #ffffff 10%, #c9b8ff 55%, #9fe3ff 90%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+
+  /* 玻璃卡片高光循环流动 */
+  .glass-card { isolation: isolate; }
+  .glass-card::after { animation: sheenDrift 7s ease-in-out infinite alternate; }
+  @keyframes sheenDrift {
+    from { transform: translateX(-6%); opacity: .8; }
+    to   { transform: translateX(6%); opacity: 1; }
+  }
+
+  /* 链接按钮斜向光泽扫过 */
+  .link { position: relative; overflow: hidden; }
+  .link::after {
+    content: ""; position: absolute; top: 0; left: -70%;
+    width: 45%; height: 100%; pointer-events: none;
+    background: linear-gradient(105deg, transparent, rgba(255, 255, 255, .18), transparent);
+    transform: skewX(-20deg); transition: left .55s ease;
+  }
+  .link:hover::after { left: 130%; }
+
+  /* 头像光圈呼吸 */
+  @keyframes ringPulse {
+    0%, 100% { box-shadow: 0 8px 24px rgba(0,0,0,.35), 0 0 0 0 rgba(150, 125, 255, .35); }
+    50%      { box-shadow: 0 8px 24px rgba(0,0,0,.35), 0 0 0 9px rgba(150, 125, 255, 0); }
+  }
+
+  /* ========== 长文页面 ========== */
+  .long-text { display: flex; flex-direction: column; gap: 16px; position: relative; z-index: 1; }
+  .block-title {
+    display: flex; align-items: center; gap: 9px;
+    font-size: 15px; font-weight: 700; margin-top: 4px;
+  }
+  .block-title::before {
+    content: ""; width: 13px; height: 13px; border-radius: 5px; flex: none;
+    background: linear-gradient(140deg, #8f6bff, #4fc3ff 60%, #ff9ecf);
+    box-shadow: 0 0 12px rgba(143, 107, 255, .6);
+  }
+  .long-text p { font-size: 14px; line-height: 1.85; color: var(--text-dim); }
+  .long-text p strong { color: var(--text); font-weight: 600; }
+  .long-text .meta-line { font-size: 12.5px; color: var(--text-dim); opacity: .8; }
+
+  /* ========== 顶部每日状态栏 ========== */
+  .status-bar {
+    position: fixed; top: max(14px, env(safe-area-inset-top)); left: 16px; right: 16px;
+    z-index: 4; display: flex; align-items: center; gap: 13px;
+    padding: 12px 14px; border-radius: 22px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35), inset 0 1px 0 var(--glass-highlight);
+  }
+  .status-bar .ring {
+    width: 46px; height: 46px; border-radius: 50%; padding: 2px; flex: none;
+    background: linear-gradient(135deg, rgba(255,255,255,.5), rgba(255,255,255,.08));
+    box-shadow: 0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.4);
+    animation: ringPulse 3.6s ease-in-out infinite;
+  }
+  .status-bar .pic {
+    width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block;
+    background: linear-gradient(140deg, #8f6bff, #4fc3ff 55%, #ff9ecf);
+  }
+  .status-main { flex: 1; min-width: 0; }
+  .status-row { display: flex; align-items: center; gap: 10px; }
+  .status-date { font-size: 13.5px; font-weight: 600; }
+  .status-date .dim { color: var(--text-dim); font-weight: 400; }
+  .status-actions { margin-left: auto; display: flex; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 7px 12px; border-radius: 999px; cursor: pointer;
+    color: var(--text); font-size: 13px; font-weight: 600;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    transition: transform .2s ease, background .2s ease;
+  }
+  .chip:hover { background: rgba(255, 255, 255, 0.15); transform: translateY(-2px); }
+  .chip:active { transform: scale(.95); }
+  .chip.on { background: rgba(143, 107, 255, 0.28); border-color: rgba(143, 107, 255, 0.5); }
+  .status-quote {
+    margin-top: 4px; font-size: 12.5px; color: var(--text-dim);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;
+  }
+  .status-quote:hover { color: var(--text); }
+
+  /* ========== 随笔 Journal ========== */
+  .journal-list { display: flex; flex-direction: column; gap: 14px; position: relative; z-index: 1; }
+  .journal-item {
+    padding: 16px; border-radius: 18px;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+  }
+  .journal-item .j-date { font-size: 12px; color: var(--text-dim); }
+  .journal-item h3 { font-size: 15px; font-weight: 700; margin: 5px 0 6px; }
+  .journal-item p { font-size: 13.5px; line-height: 1.75; color: var(--text-dim); }
+
+  /* ========== 技能 Skills ========== */
+  .skill { margin-bottom: 18px; position: relative; z-index: 1; }
+  .skill .skill-top { display: flex; justify-content: space-between; font-size: 13.5px; margin-bottom: 8px; }
+  .skill .skill-top .pct { color: var(--text-dim); }
+  .bar { height: 9px; border-radius: 999px; background: rgba(255, 255, 255, 0.1); overflow: hidden; }
+  .bar i {
+    display: block; height: 100%; width: 0; border-radius: 999px;
+    background: linear-gradient(90deg, #8f6bff, #4fc3ff, #ff9ecf);
+    box-shadow: 0 0 12px rgba(143, 107, 255, .5);
+    transition: width 1s cubic-bezier(.22, 1, .36, 1);
+  }
+
+  /* ========== 联系 / 留言板 ========== */
+  .contact-line {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 13px 15px; border-radius: 16px; margin-bottom: 12px;
+    background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.14);
+  }
+  .contact-line .k { font-size: 13.5px; color: var(--text-dim); }
+  .contact-line .v { font-size: 13.5px; font-weight: 600; }
+  .copy-btn {
+    padding: 7px 12px; border-radius: 12px; cursor: pointer; font-size: 12.5px;
+    color: var(--text); background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.16); transition: background .2s;
+  }
+  .copy-btn:hover { background: rgba(255, 255, 255, 0.18); }
+  .msg-box { display: flex; gap: 10px; margin: 16px 0; }
+  .msg-box input {
+    flex: 1; padding: 12px 14px; border-radius: 14px; color: var(--text);
+    background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.16);
+    outline: none; font-size: 14px;
+  }
+  .msg-box input::placeholder { color: var(--text-dim); }
+  .msg-box input:focus { border-color: rgba(143, 107, 255, 0.5); }
+  .msg-send {
+    padding: 0 18px; border-radius: 14px; cursor: pointer; font-weight: 600; font-size: 14px;
+    color: #fff; border: none;
+    background: linear-gradient(135deg, #8f6bff, #4fc3ff);
+    transition: transform .2s, filter .2s;
+  }
+  .msg-send:hover { filter: brightness(1.1); transform: translateY(-2px); }
+  .msg-list { display: flex; flex-direction: column; gap: 10px; }
+  .msg-list .msg {
+    padding: 11px 14px; border-radius: 14px; font-size: 13.5px; line-height: 1.6;
+    background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+  .msg-list .msg .m-time { display: block; font-size: 11.5px; color: var(--text-dim); margin-top: 4px; }
+  .msg-empty { font-size: 13px; color: var(--text-dim); }
+
+  /* ========== 图片 Lightbox ========== */
+  .lightbox {
+    position: fixed; inset: 0; z-index: 10; display: none;
+    align-items: center; justify-content: center; padding: 24px;
+    background: rgba(8, 10, 20, 0.72); backdrop-filter: blur(10px);
+  }
+  .lightbox.open { display: flex; animation: viewIn .3s ease both; }
+  .lightbox img {
+    max-width: 100%; max-height: 82vh; border-radius: 22px;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+  }
+  .lightbox .lb-close {
+    position: absolute; top: max(20px, env(safe-area-inset-top)); right: 20px;
+    width: 42px; height: 42px; border-radius: 50%; cursor: pointer; font-size: 18px;
+    color: var(--text); background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  .gallery-item { cursor: zoom-in; }
+
+  /* ========== 中间液态玻璃模块 ========== */
+  .glass-card {
+    width: 100%; max-width: 400px;
+    border-radius: 28px;
+    padding: 34px 24px 26px;
+    position: relative;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    box-shadow:
+      0 24px 60px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 var(--glass-highlight),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+  }
+  /* 玻璃顶部高光 */
+  .glass-card::before {
+    content: ""; position: absolute; top: 0; left: 10%; right: 10%;
+    height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.6), transparent);
+  }
+  /* 玻璃流动反光 */
+  .glass-card::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(120deg,
+      rgba(255,255,255,.14) 0%, transparent 30%,
+      transparent 70%, rgba(255,255,255,.08) 100%);
+    pointer-events: none;
+  }
+
+  .head { text-align: center; margin-bottom: 26px; }
+  .head .big-avatar {
+    width: 84px; height: 84px; margin: 0 auto 16px; border-radius: 50%;
+    padding: 3px;
+    background: linear-gradient(135deg, rgba(255,255,255,.55), rgba(255,255,255,.1));
+    box-shadow: 0 12px 32px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.45);
+  }
+  .head .big-avatar .pic {
+    width: 100%; height: 100%; border-radius: 50%;
+    object-fit: cover; display: block;
+    background: linear-gradient(140deg, #8f6bff, #4fc3ff 55%, #ff9ecf);
+  }
+  .head h1 { font-size: 22px; font-weight: 700; letter-spacing: .3px; }
+  .head p { margin-top: 6px; font-size: 14px; color: var(--text-dim); }
+
+  /* ========== 链接按钮 ========== */
+  .links { display: flex; flex-direction: column; gap: 14px; position: relative; z-index: 1; }
+  .link {
+    display: flex; align-items: center; gap: 14px;
+    padding: 15px 16px; border-radius: 18px;
+    color: var(--text); text-decoration: none;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.18);
+    transition: transform .22s ease, background .22s ease, box-shadow .22s ease;
+  }
+  .link:hover, .link:focus-visible {
+    transform: translateY(-3px);
+    background: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 10px 24px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.25);
+  }
+  .link:active { transform: translateY(0) scale(.98); }
+  .link .icon {
+    width: 40px; height: 40px; border-radius: 13px; flex: none;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.15);
+  }
+  .link .icon svg { width: 20px; height: 20px; fill: none; stroke: var(--text); stroke-width: 1.8; }
+  .link .label { flex: 1; }
+  .link .label .t { font-size: 15px; font-weight: 600; }
+  .link .label .s { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+  .link .arrow { color: var(--text-dim); flex: none; }
+  .link .arrow svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; }
+
+  .foot {
+    margin-top: 22px; text-align: center;
+    font-size: 12px; color: var(--text-dim); position: relative; z-index: 1;
+  }
+
+  /* 小屏微调 */
+  @media (max-width: 380px) {
+    .glass-card { padding: 28px 18px 22px; }
+    .status-quote { display: none; }
+    .chip { padding: 7px 10px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="scene">
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
+  <div class="blob b3"></div>
+</div>
+
+<!-- 背景漂浮图片：把每个 img 的 src 换成你的作品图链接即可 -->
+<div class="float-imgs">
+  <div class="float-img f1">
+    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%238f6bff'/%3E%3Cstop offset='1' stop-color='%234fc3ff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' fill='url(%23g)'/%3E%3C/svg%3E" alt="漂浮作品 1">
+  </div>
+  <div class="float-img f2">
+    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23ff9ecf'/%3E%3Cstop offset='1' stop-color='%238f6bff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' fill='url(%23g)'/%3E%3C/svg%3E" alt="漂浮作品 2">
+  </div>
+  <div class="float-img f3">
+    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%234fc3ff'/%3E%3Cstop offset='1' stop-color='%237ee0c3'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' fill='url(%23g)'/%3E%3C/svg%3E" alt="漂浮作品 3">
+  </div>
+  <div class="float-img f4">
+    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23ffb86b'/%3E%3Cstop offset='1' stop-color='%23ff7ac6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' fill='url(%23g)'/%3E%3C/svg%3E" alt="漂浮作品 4">
+  </div>
+</div>
+
+<!-- 顶部每日状态栏：头像可换成图片链接 -->
+<header class="status-bar">
+  <a class="ring" href="#" data-view="home" aria-label="主页头像">
+    <img class="pic"
+      src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%238f6bff'/%3E%3Cstop offset='.55' stop-color='%234fc3ff'/%3E%3Cstop offset='1' stop-color='%23ff9ecf'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='50' cy='50' r='50' fill='url(%23g)'/%3E%3Ctext x='50' y='64' font-size='40' font-family='sans-serif' font-weight='700' fill='white' text-anchor='middle'%3EP%3C/text%3E%3C/svg%3E"
+      alt="Pasha 头像">
+  </a>
+  <div class="status-main">
+    <div class="status-row">
+      <span class="status-date" id="statusDate"></span>
+      <div class="status-actions">
+        <button class="chip" id="moodBtn" title="切换今天心情"></button>
+        <button class="chip" id="checkinBtn" title="今日打卡"></button>
+      </div>
+    </div>
+    <div class="status-quote" id="statusQuote" title="换一句"></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <!-- ===== 视图：主页 ===== -->
+  <div id="view-home" class="view active">
+  <!-- 中间液态玻璃模块 -->
+  <section class="glass-card scroll">
+    <div class="head">
+      <div class="big-avatar">
+        <!-- 把 img 的 src 换成你的图片链接即可 -->
+        <img class="pic"
+          src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%238f6bff'/%3E%3Cstop offset='.55' stop-color='%234fc3ff'/%3E%3Cstop offset='1' stop-color='%23ff9ecf'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='50' cy='50' r='50' fill='url(%23g)'/%3E%3Ctext x='50' y='64' font-size='40' font-family='sans-serif' font-weight='700' fill='white' text-anchor='middle'%3EP%3C/text%3E%3C/svg%3E"
+          alt="Pasha 头像">
+      </div>
+      <h1>Pasha</h1>
+      <p>插画 · 3D 模型 · 小世界创作</p>
+    </div>
+
+    <nav class="links">
+      <a class="link" href="#" data-view="about">
+        <span class="icon">
+          <svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z" stroke-linejoin="round"/><path d="M4 9h16M9 5v14"/></svg>
+        </span>
+        <span class="label">
+          <div class="t">作品集网站</div>
+          <div class="s">Pasha's Gallery · About</div>
+        </span>
+        <span class="arrow"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+
+      <a class="link" href="#" data-view="models">
+        <span class="icon">
+          <svg viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z" stroke-linejoin="round"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg>
+        </span>
+        <span class="label">
+          <div class="t">3D 模型查看器</div>
+          <div class="s">模型与渲染作品</div>
+        </span>
+        <span class="arrow"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+
+      <a class="link" href="#" data-view="leaves">
+        <span class="icon">
+          <svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-7-10a7 7 0 0114 0c0 5.5-7 10-7 10z" stroke-linejoin="round"/></svg>
+        </span>
+        <span class="label">
+          <div class="t">Leaves Town</div>
+          <div class="s">艺术项目 · 小世界设定</div>
+        </span>
+        <span class="arrow"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+
+      <a class="link" href="#" data-view="artfol">
+        <span class="icon">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="var(--text)" stroke="none"/></svg>
+        </span>
+        <span class="label">
+          <div class="t">Artfol / Instagram</div>
+          <div class="s">作品集说明与创作方向</div>
+        </span>
+        <span class="arrow"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+
+      <a class="link" href="#" data-view="gallery">
+        <span class="icon">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>
+        </span>
+        <span class="label">
+          <div class="t">作品 Gallery</div>
+          <div class="s">插画与场景图合集</div>
+        </span>
+        <span class="arrow"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+
+      <a class="link" href="#" data-view="journal">
+        <span class="icon">
+          <svg viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 013 3v13H8a3 3 0 01-3-3V4z" stroke-linejoin="round"/><path d="M9 9h6M9 13h6"/></svg>
+        </span>
+        <span class="label">
+          <div class="t">随笔 Journal</div>
+          <div class="s">画画日常与碎碎念</div>
+        </span>
+        <span class="arrow"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+
+      <a class="link" href="#" data-view="skills">
+        <span class="icon">
+          <svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" stroke-linecap="round"/></svg>
+        </span>
+        <span class="label">
+          <div class="t">技能 Skills</div>
+          <div class="s">目前在练的方向</div>
+        </span>
+        <span class="arrow"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+
+      <a class="link" href="#" data-view="contact">
+        <span class="icon">
+          <svg viewBox="0 0 24 24"><path d="M4 6h16v12H4z" stroke-linejoin="round"/><path d="M4 7l8 6 8-6"/></svg>
+        </span>
+        <span class="label">
+          <div class="t">留言 Contact</div>
+          <div class="s">找我聊天 · 留言板</div>
+        </span>
+        <span class="arrow"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+    </nav>
+
+    <div class="foot">© 2026 Pasha · Made with glass & light</div>
+  </section>
+  </div><!-- /view-home -->
+
+  <!-- ===== 视图：About 自我介绍 ===== -->
+  <div id="view-about" class="view">
+    <section class="glass-card scroll">
+      <a class="back-btn" href="#" data-view="home">
+        <svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        返回
+      </a>
+      <div class="sub-head anim">
+        <h1 class="grad-text">About</h1>
+        <p>关于我</p>
+      </div>
+      <div class="about-text">
+        <p class="anim">你好，我是 Pasha，一个喜欢画画、也喜欢搭小世界的创作者。</p>
+        <p class="anim">平时主要练习插画、角色和场景，也会把喜欢的小东西做成 3D 模型，再一点点布置成完整的小世界。这里会陆续放上我的作品、模型和进行中的项目。</p>
+        <p class="anim">如果你喜欢我的画，欢迎在社交平台找我聊天，也可以给我留言合作。</p>
+        <div class="tags anim">
+          <span class="tag">插画</span>
+          <span class="tag">3D 模型</span>
+          <span class="tag">场景</span>
+          <span class="tag">小世界</span>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ===== 视图：3D 模型 ===== -->
+  <div id="view-models" class="view">
+    <section class="glass-card scroll">
+      <a class="back-btn" href="#" data-view="home">
+        <svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        返回
+      </a>
+      <div class="sub-head anim">
+        <h1 class="grad-text">3D 模型</h1>
+        <p>Models & Renders</p>
+      </div>
+      <p class="models-note anim">这里是我做过的一些 3D 模型与渲染作品，点开可以查看更多细节。</p>
+      <div class="model-grid anim">
+        <!-- 把每个 img 的 src 换成模型图链接即可 -->
+        <div class="model-item">
+          <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%238f6bff'/%3E%3Cstop offset='1' stop-color='%234fc3ff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' fill='url(%23g)'/%3E%3C/svg%3E" alt="模型 1">
+        </div>
+        <div class="model-item">
+          <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23ff9ecf'/%3E%3Cstop offset='1' stop-color='%238f6bff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' fill='url(%23g)'/%3E%3C/svg%3E" alt="模型 2">
+        </div>
+        <div class="model-item">
+          <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%234fc3ff'/%3E%3Cstop offset='1' stop-color='%237ee0c3'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' fill='url(%23g)'/%3E%3C/svg%3E" alt="模型 3">
+        </div>
+        <div class="model-item">
+          <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23ffb86b'/%3E%3Cstop offset='1' stop-color='%23ff7ac6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' fill='url(%23g)'/%3E%3C/svg%3E" alt="模型 4">
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ===== 视图：Leaves Town ===== -->
+  <div id="view-leaves" class="view">
+    <section class="glass-card scroll">
+      <a class="back-btn" href="#" data-view="home">
+        <svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        返回
+      </a>
+      <div class="sub-head anim">
+        <h1 class="grad-text">Leaves Town</h1>
+        <p>一个慢慢生长的小世界</p>
+      </div>
+      <div class="long-text">
+        <div class="anim">
+          <div class="block-title">项目简介</div>
+          <p><strong>Leaves Town</strong> 是我一直在搭建的微型小镇项目：把一片片落叶、一间间小房子和路过的小人物，慢慢拼成一座有季节变化的小镇。它更像一个可以不断往里添加细节的作品集，而不是一次做完就停下的作品。</p>
+        </div>
+        <div class="anim">
+          <div class="block-title">世界观设定</div>
+          <p>镇子坐落在一片缓坡上，风会把秋天的叶子吹过长街。房屋高低错落，屋顶上长着青苔和小花；居民都是一些安静的小人物，开店、散步、收集落叶。这里没有激烈的冲突，重点是<strong>光线、天气和日常里的小温柔</strong>。</p>
+        </div>
+        <div class="anim">
+          <div class="block-title">进行中的部分</div>
+          <p>目前在补画镇口的面包店、河边的长椅和一整排换季的树；接下来会加入雨天、傍晚灯光和更多可以走近的小场景。所有角色和场景都先画成草稿，再整理成统一的配色和角度。</p>
+        </div>
+        <div class="anim">
+          <div class="block-title">记录方式</div>
+          <p>过程稿、配色尝试和阶段性完成图，会陆续发到 Artfol 和 Instagram；正式的场景图会汇总到这里。如果你喜欢这个小镇，欢迎留下你想看到的角落。</p>
+        </div>
+        <div class="tags anim">
+          <span class="tag">场景插画</span>
+          <span class="tag">微型世界</span>
+          <span class="tag">四季变化</span>
+          <span class="tag">持续更新</span>
+        </div>
+        <div class="meta-line anim">状态：搭建中 · 不定期更新</div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ===== 视图：Artfol / Instagram ===== -->
+  <div id="view-artfol" class="view">
+    <section class="glass-card scroll">
+      <a class="back-btn" href="#" data-view="home">
+        <svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        返回
+      </a>
+      <div class="sub-head anim">
+        <h1 class="grad-text">Artfol</h1>
+        <p>创作与作品合集</p>
+      </div>
+      <div class="long-text">
+        <div class="anim">
+          <div class="block-title">账号简介</div>
+          <p>这里是我发布日常绘画和作品过程的地方。除了完成稿，也会放草稿、线稿、配色练习和中途翻车的版本，方便看到一张画是怎么一步步成型的。欢迎关注，一起看着它慢慢进步。</p>
+        </div>
+        <div class="anim">
+          <div class="block-title">创作方向</div>
+          <p>我偏爱<strong>柔和的颜色、安静的氛围和有故事感的画面</strong>：喜欢画人物表情、小场景、光影对比，以及带一点幻想感的日常。画面里通常希望留出一点呼吸感，而不是把所有地方都填满。</p>
+        </div>
+        <div class="anim">
+          <div class="block-title">作品类型</div>
+          <p>发布内容主要包括角色插画、场景练习、头像与配图练习，以及和 3D 模型搭配的小场景渲染。偶尔也会做二创和主题挑战，跟着题目去尝试平时不太会碰的题材。</p>
+        </div>
+        <div class="anim">
+          <div class="block-title">更新节奏</div>
+          <p>完成一张比较完整的画会发成正式作品；练习和过程会随手更新。如果有想约稿、合作或者单纯想聊聊画画，都可以通过这里留下的社交账号找到我，我会尽量回复。</p>
+        </div>
+        <div class="tags anim">
+          <span class="tag">角色插画</span>
+          <span class="tag">场景练习</span>
+          <span class="tag">线稿过程</span>
+          <span class="tag">配色练习</span>
+        </div>
+        <div class="meta-line anim">欢迎留言 · 合作与约稿请私信</div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ===== 视图：Gallery 作品 ===== -->
+  <div id="view-gallery" class="view">
+    <section class="glass-card scroll">
+      <a class="back-btn" href="#" data-view="home">
+        <svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        返回
+      </a>
+      <div class="sub-head anim">
+        <h1 class="grad-text">Gallery</h1>
+        <p>插画与场景图合集 · 点开可放大</p>
+      </div>
+      <div class="model-grid anim">
+        <div class="model-item gallery-item"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%238f6bff'/%3E%3Cstop offset='1' stop-color='%234fc3ff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' fill='url(%23g)'/%3E%3C/svg%3E" alt="作品 1"></div>
+        <div class="model-item gallery-item"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23ff9ecf'/%3E%3Cstop offset='1' stop-color='%238f6bff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' fill='url(%23g)'/%3E%3C/svg%3E" alt="作品 2"></div>
+        <div class="model-item gallery-item"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%234fc3ff'/%3E%3Cstop offset='1' stop-color='%237ee0c3'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' fill='url(%23g)'/%3E%3C/svg%3E" alt="作品 3"></div>
+        <div class="model-item gallery-item"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23ffb86b'/%3E%3Cstop offset='1' stop-color='%23ff7ac6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' fill='url(%23g)'/%3E%3C/svg%3E" alt="作品 4"></div>
+        <div class="model-item gallery-item"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%237ee0c3'/%3E%3Cstop offset='1' stop-color='%234fc3ff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' fill='url(%23g)'/%3E%3C/svg%3E" alt="作品 5"></div>
+        <div class="model-item gallery-item"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23c9b8ff'/%3E%3Cstop offset='1' stop-color='%23ff9ecf'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' fill='url(%23g)'/%3E%3C/svg%3E" alt="作品 6"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ===== 视图：Journal 随笔 ===== -->
+  <div id="view-journal" class="view">
+    <section class="glass-card scroll">
+      <a class="back-btn" href="#" data-view="home">
+        <svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        返回
+      </a>
+      <div class="sub-head anim">
+        <h1 class="grad-text">Journal</h1>
+        <p>画画日常与碎碎念</p>
+      </div>
+      <div class="journal-list">
+        <div class="journal-item anim">
+          <span class="j-date">11 / 27</span>
+          <h3>今天把小镇的光线调暖了一点</h3>
+          <p>给 Leaves Town 的傍晚加了暖黄色窗灯，树叶改成偏橙的色调。原本冷冷的一条街，突然就有了下班回家的感觉。继续补河边的长椅。</p>
+        </div>
+        <div class="journal-item anim">
+          <span class="j-date">11 / 24</span>
+          <h3>练习一组表情和侧脸</h3>
+          <p>画了四种不同心情的侧脸，发现自己最容易画笑，难过和发呆的表情总是不够自然。下次专门挑不擅长的角度多练几张。</p>
+        </div>
+        <div class="journal-item anim">
+          <span class="j-date">11 / 20</span>
+          <h3>第一个完整 3D 小场景</h3>
+          <p>把一个小房子模型放进场景里打了光，虽然布线还有点乱，但渲染出来的时候真的很有成就感。慢慢把模型和插画接到同一个世界里。</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ===== 视图：Skills 技能 ===== -->
+  <div id="view-skills" class="view">
+    <section class="glass-card scroll">
+      <a class="back-btn" href="#" data-view="home">
+        <svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        返回
+      </a>
+      <div class="sub-head anim">
+        <h1 class="grad-text">Skills</h1>
+        <p>目前在练的方向</p>
+      </div>
+      <div class="skill anim">
+        <div class="skill-top"><span>插画 / 角色</span><span class="pct">70%</span></div>
+        <div class="bar"><i data-level="70"></i></div>
+      </div>
+      <div class="skill anim">
+        <div class="skill-top"><span>场景与配色</span><span class="pct">62%</span></div>
+        <div class="bar"><i data-level="62"></i></div>
+      </div>
+      <div class="skill anim">
+        <div class="skill-top"><span>3D 建模</span><span class="pct">45%</span></div>
+        <div class="bar"><i data-level="45"></i></div>
+      </div>
+      <div class="skill anim">
+        <div class="skill-top"><span>光影与氛围</span><span class="pct">58%</span></div>
+        <div class="bar"><i data-level="58"></i></div>
+      </div>
+      <div class="tags anim">
+        <span class="tag">线稿</span><span class="tag">上色</span><span class="tag">构图</span>
+        <span class="tag">Blender 入门</span><span class="tag">渲染练习</span>
+      </div>
+    </section>
+  </div>
+
+  <!-- ===== 视图：Contact 留言 ===== -->
+  <div id="view-contact" class="view">
+    <section class="glass-card scroll">
+      <a class="back-btn" href="#" data-view="home">
+        <svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        返回
+      </a>
+      <div class="sub-head anim">
+        <h1 class="grad-text">Contact</h1>
+        <p>找我聊天 · 留言板</p>
+      </div>
+      <div class="contact-line anim">
+        <span class="k">Email</span>
+        <span class="v">hello@pasha.art</span>
+        <button class="copy-btn" data-copy="hello@pasha.art">复制</button>
+      </div>
+      <div class="contact-line anim">
+        <span class="k">Artfol</span>
+        <span class="v">@pasha.gallery</span>
+        <button class="copy-btn" data-copy="@pasha.gallery">复制</button>
+      </div>
+      <div class="msg-box anim">
+        <input id="msgInput" type="text" maxlength="120" placeholder="留个言吧…">
+        <button class="msg-send" id="msgSend">发送</button>
+      </div>
+      <div class="msg-list" id="msgList"></div>
+    </section>
+  </div>
+</div>
+
+<!-- 图片放大 Lightbox -->
+<div class="lightbox" id="lightbox">
+  <button class="lb-close" id="lbClose" aria-label="关闭">✕</button>
+  <img id="lbImg" src="" alt="放大作品">
+</div>
+
+<script>
+  // 背景光斑随鼠标轻微视差
+  const blobs = document.querySelectorAll('.blob');
+  window.addEventListener('pointermove', (e) => {
+    const x = (e.clientX / window.innerWidth - 0.5);
+    const y = (e.clientY / window.innerHeight - 0.5);
+    blobs.forEach((b, i) => {
+      const depth = (i + 1) * 12;
+      b.style.translate = `${x * depth}px ${y * depth}px`;
+    });
+  });
+
+  // ===== 视图路由 =====
+  const views = document.querySelectorAll('.view');
+  function animateBars(view) {
+    view.querySelectorAll('.bar i').forEach(i => {
+      i.style.width = '0';
+      setTimeout(() => { i.style.width = i.dataset.level + '%'; }, 80);
+    });
+  }
+  function showView(name) {
+    let target;
+    views.forEach(v => {
+      const on = v.id === 'view-' + name;
+      v.classList.toggle('active', on);
+      if (on) target = v;
+    });
+    const wrap = document.querySelector('.wrap');
+    if (wrap) wrap.scrollTop = 0;
+    window.scrollTo(0, 0);
+    if (target) animateBars(target);
+  }
+  document.addEventListener('click', (e) => {
+    const el = e.target.closest('[data-view]');
+    if (!el) return;
+    e.preventDefault();
+    showView(el.dataset.view);
+  });
+
+  // ===== 顶部每日状态栏 =====
+  const now = new Date();
+  const week = ['日', '一', '二', '三', '四', '五', '六'];
+  document.getElementById('statusDate').textContent =
+    `${now.getMonth() + 1}/${now.getDate()} 周${week[now.getDay()]}`;
+
+  // 每日一句（点一下换一句）
+  const quotes = [
+    '慢慢来，把喜欢的事一点点做完。',
+    '今天也要给画面留一点呼吸感。',
+    '不擅长的角度，正是下次要练的地方。',
+    '把小世界搭好，风自己会吹进来。',
+    '先完成，再慢慢变厉害。',
+    '颜色比线条更先说出心情。',
+    '每一张废稿都是下一张的草稿。',
+    '安静地画，也是一种表达。'
+  ];
+  const quoteEl = document.getElementById('statusQuote');
+  const dayIndex = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
+  let qi = dayIndex % quotes.length;
+  const renderQuote = () => quoteEl.textContent = '✦ ' + quotes[qi];
+  renderQuote();
+  quoteEl.addEventListener('click', () => { qi = (qi + 1) % quotes.length; renderQuote(); });
+
+  // 心情切换（本地保存）
+  const moods = [['😀', '开心'], ['😌', '平静'], ['😪', '疲惫'], ['✨', '有灵感']];
+  const moodBtn = document.getElementById('moodBtn');
+  let mi = Math.min(+(localStorage.getItem('mood') || 0), moods.length - 1);
+  const renderMood = () => moodBtn.textContent = moods[mi][0] + ' ' + moods[mi][1];
+  renderMood();
+  moodBtn.addEventListener('click', () => {
+    mi = (mi + 1) % moods.length;
+    localStorage.setItem('mood', mi);
+    renderMood();
+  });
+
+  // 今日打卡（按日期保存）
+  const checkinBtn = document.getElementById('checkinBtn');
+  const todayKey = 'checkin_' + now.toDateString();
+  const renderCheckin = () => {
+    const done = localStorage.getItem(todayKey) === '1';
+    checkinBtn.classList.toggle('on', done);
+    checkinBtn.textContent = done ? '✓ 已打卡' : '打卡';
+  };
+  renderCheckin();
+  checkinBtn.addEventListener('click', () => {
+    const done = localStorage.getItem(todayKey) === '1';
+    localStorage.setItem(todayKey, done ? '0' : '1');
+    renderCheckin();
+  });
+
+  // ===== 图片放大 Lightbox =====
+  const lightbox = document.getElementById('lightbox');
+  const lbImg = document.getElementById('lbImg');
+  document.addEventListener('click', (e) => {
+    const item = e.target.closest('.gallery-item');
+    if (!item) return;
+    lbImg.src = item.querySelector('img').src;
+    lightbox.classList.add('open');
+  });
+  const closeLb = () => lightbox.classList.remove('open');
+  document.getElementById('lbClose').addEventListener('click', closeLb);
+  lightbox.addEventListener('click', (e) => { if (e.target === lightbox) closeLb(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLb(); });
+
+  // ===== 复制按钮 =====
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.copy-btn');
+    if (!btn) return;
+    const text = btn.dataset.copy;
+    const done = () => {
+      const old = btn.textContent; btn.textContent = '已复制';
+      setTimeout(() => btn.textContent = old, 1200);
+    };
+    if (navigator.clipboard) navigator.clipboard.writeText(text).then(done).catch(done);
+    else done();
+  });
+
+  // ===== 留言板（本地保存）=====
+  const msgList = document.getElementById('msgList');
+  const msgInput = document.getElementById('msgInput');
+  const msgSend = document.getElementById('msgSend');
+  const MSG_KEY = 'pasha_messages';
+  let msgs = [];
+  try { msgs = JSON.parse(localStorage.getItem(MSG_KEY) || '[]'); } catch (err) { msgs = []; }
+  function renderMsgs() {
+    if (!msgs.length) { msgList.innerHTML = '<div class="msg-empty">还没有留言，来留第一条吧～</div>'; return; }
+    msgList.innerHTML = msgs.map(m =>
+      `<div class="msg">${m.text}<span class="m-time">${m.time}</span></div>`
+    ).join('');
+  }
+  renderMsgs();
+  function addMsg() {
+    const text = msgInput.value.trim();
+    if (!text) return;
+    const t = new Date();
+    const time = `${t.getMonth() + 1}/${t.getDate()} ${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`;
+    msgs.unshift({ text, time });
+    localStorage.setItem(MSG_KEY, JSON.stringify(msgs.slice(0, 30)));
+    msgInput.value = '';
+    renderMsgs();
+  }
+  msgSend.addEventListener('click', addMsg);
+  msgInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') addMsg(); });
+</script>
+</body>
+</html>
